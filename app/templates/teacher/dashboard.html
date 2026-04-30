@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard — SmartAttend{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-chalkboard-teacher"></i> Teacher Dashboard</h1>
+            <p class="page-subtitle">Manage attendance sessions and track student performance</p>
+        </div>
+        <div class="header-actions">
+            <!-- Semester Filter -->
+            <form method="GET" class="semester-filter">
+                <select name="semester" onchange="this.form.submit()" class="select-input">
+                    <option value="">All Semesters</option>
+                    {% for sem in semesters %}
+                    <option value="{{ sem }}" {% if selected_semester == sem %}selected{% endif %}>Semester {{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active Session Banner -->
+    {% if active_session %}
+    <div class="active-session-banner">
+        <div class="session-info">
+            <i class="fas fa-broadcast-tower pulse-icon"></i>
+            <div>
+                <strong>Active Session:</strong> {{ active_session.subject_name }} ({{ active_session.session_id }})
+                <br><small>{{ active_session.marked | length }} students marked</small>
+            </div>
+        </div>
+        <a href="{{ url_for('teacher.session_page') }}" class="btn btn-light">
+            <i class="fas fa-video"></i> Go to Session
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Subject Cards -->
+    <div class="cards-grid">
+        {% for item in subject_data %}
+        <div class="subject-card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-book"></i></div>
+                <div>
+                    <h3>{{ item.subject.name }}</h3>
+                    <span class="badge badge-outline">{{ item.subject.code }}</span>
+                    <span class="badge badge-muted">Sem {{ item.subject.semester }}</span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Stats Grid -->
+                <div class="stats-mini-grid">
+                    <div class="stat-mini">
+                        <span class="stat-value">{{ item.summary | length }}</span>
+                        <span class="stat-label">Students</span>
+                    </div>
+                    <div class="stat-mini">
+                        {% set avg_pct = (item.summary | map(attribute='percentage') | list | sum) / (item.summary | length) if item.summary else 0 %}
+                        <span class="stat-value {% if avg_pct < 75 %}text-danger{% elif avg_pct < 85 %}text-warning{% else %}text-success{% endif %}">
+                            {{ "%.1f" | format(avg_pct) }}%
+                        </span>
+                        <span class="stat-label">Avg Attendance</span>
+                    </div>
+                    <div class="stat-mini">
+                        {% set low_count = item.summary | selectattr('percentage', 'lt', 75) | list | length %}
+                        <span class="stat-value {% if low_count > 0 %}text-danger{% endif %}">{{ low_count }}</span>
+                        <span class="stat-label">Below 75%</span>
+                    </div>
+                </div>
+
+                <!-- Student Table -->
+                {% if item.summary %}
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Enrollment</th>
+                                <th>Present</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in item.summary[:5] %}
+                            <tr class="{% if s.percentage < 75 %}row-danger{% endif %}">
+                                <td>{{ s.name }}</td>
+                                <td><code>{{ s.enrollment_no }}</code></td>
+                                <td>{{ s.present }}/{{ s.total }}</td>
+                                <td>
+                                    <div class="progress-bar-mini">
+                                        <div class="progress-fill {% if s.percentage < 75 %}fill-danger{% elif s.percentage < 85 %}fill-warning{% else %}fill-success{% endif %}"
+                                             style="width: {{ s.percentage }}%"></div>
+                                    </div>
+                                    <span class="pct-text">{{ s.percentage }}%</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if item.summary | length > 5 %}
+                            <tr><td colspan="4" class="text-center text-muted">... and {{ item.summary | length - 5 }} more</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state"><i class="fas fa-inbox"></i> No attendance data yet</p>
+                {% endif %}
+            </div>
+
+            <div class="card-actions">
+                <!-- Start Session -->
+                {% if not active_session %}
+                <form method="POST" action="{{ url_for('teacher.start_session') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="subject_id" value="{{ item.subject.id }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-play"></i> Start Session</button>
+                </form>
+                {% endif %}
+                <!-- Export -->
+                <a href="{{ url_for('teacher.export', subject_id=item.subject.id) }}" class="btn btn-outline">
+                    <i class="fas fa-file-excel"></i> Export
+                </a>
+                <!-- Send Alerts -->
+                <form method="POST" action="{{ url_for('teacher.send_alerts', subject_id=item.subject.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-warning-outline"><i class="fas fa-bell"></i> Alerts</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not subject_data %}
+    <div class="empty-state-large">
+        <i class="fas fa-book-open"></i>
+        <h3>No Subjects Found</h3>
+        <p>Ask the admin to assign subjects to your account.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

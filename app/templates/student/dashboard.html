@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard — SmartAttend{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-user-graduate"></i> My Attendance</h1>
+            <p class="page-subtitle">Track your attendance across all subjects</p>
+        </div>
+        <div class="header-actions">
+            <form method="GET" class="semester-filter">
+                <select name="semester" onchange="this.form.submit()" class="select-input">
+                    {% for sem in semesters %}
+                    <option value="{{ sem }}" {% if selected_semester == sem %}selected{% endif %}>Semester {{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overall Stats -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ overall.percentage }}%</span>
+                <span class="stat-label">Overall Attendance</span>
+            </div>
+            <div class="stat-ring">
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    <path class="circle {% if overall.percentage >= 75 %}circle-green{% elif overall.percentage >= 50 %}circle-yellow{% else %}circle-red{% endif %}"
+                          stroke-dasharray="{{ overall.percentage }}, 100"
+                          d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ overall.present_count }}</span>
+                <span class="stat-label">Classes Attended</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ overall.total_sessions }}</span>
+                <span class="stat-label">Total Sessions</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-book"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ subject_stats | length }}</span>
+                <span class="stat-label">Subjects</span>
+            </div>
+        </div>
+    </div>
+
+    {% if overall.percentage < 75 %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Warning:</strong> Your overall attendance is below 75%. Please attend classes regularly to avoid academic penalties.
+    </div>
+    {% endif %}
+
+    <!-- Subject-wise Breakdown -->
+    <h2 class="section-title"><i class="fas fa-book-open"></i> Subject-wise Attendance</h2>
+    <div class="cards-grid">
+        {% for item in subject_stats %}
+        <div class="subject-card student-subject-card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-book"></i></div>
+                <div>
+                    <h3>{{ item.subject.name }}</h3>
+                    <span class="badge badge-outline">{{ item.subject.code }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="attendance-donut">
+                    <svg viewBox="0 0 36 36" class="circular-chart large-chart">
+                        <path class="circle-bg" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="circle {% if item.stats.percentage >= 75 %}circle-green{% elif item.stats.percentage >= 50 %}circle-yellow{% else %}circle-red{% endif %}"
+                              stroke-dasharray="{{ item.stats.percentage }}, 100"
+                              d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <div class="donut-center">
+                        <span class="donut-value">{{ item.stats.percentage }}%</span>
+                    </div>
+                </div>
+                <div class="stats-mini-grid">
+                    <div class="stat-mini">
+                        <span class="stat-value text-success">{{ item.stats.present_count }}</span>
+                        <span class="stat-label">Present</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-value text-danger">{{ item.stats.total_sessions - item.stats.present_count }}</span>
+                        <span class="stat-label">Absent</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-value">{{ item.stats.total_sessions }}</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent History -->
+            {% if item.stats.records %}
+            <div class="card-footer">
+                <h4>Recent History</h4>
+                <div class="history-list">
+                    {% for rec in item.stats.records[:5] %}
+                    <div class="history-item">
+                        <span class="history-date">{{ rec.timestamp }}</span>
+                        <span class="badge {% if rec.status == 'present' %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ rec.status | capitalize }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not subject_stats %}
+    <div class="empty-state-large">
+        <i class="fas fa-book-open"></i>
+        <h3>No Subjects Found</h3>
+        <p>No subjects are assigned to semester {{ selected_semester }}.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

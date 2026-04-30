@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SmartAttend{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
+            <p class="page-subtitle">Manage system users, subjects, and monitor activity</p>
+        </div>
+    </div>
+
+    <!-- System Stats -->
+    <div class="stats-grid">
+        <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.students }}</span>
+                <span class="stat-label">Students</span>
+            </div>
+        </div>
+        <div class="stat-card stat-purple">
+            <div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.teachers }}</span>
+                <span class="stat-label">Teachers</span>
+            </div>
+        </div>
+        <div class="stat-card stat-teal">
+            <div class="stat-icon"><i class="fas fa-book"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.subjects }}</span>
+                <span class="stat-label">Subjects</span>
+            </div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.attendance_records }}</span>
+                <span class="stat-label">Attendance Records</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Panels -->
+    <div class="admin-grid">
+
+        <!-- ── Add Teacher ─────────────────────────────── -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-chalkboard-teacher"></i> Teachers</h3>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_teacher') }}" class="admin-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="name" required placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" required placeholder="teacher@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Teacher</button>
+            </form>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in teachers %}
+                        <tr>
+                            <td>{{ t.name }}</td>
+                            <td>{{ t.email }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.delete_teacher', teacher_id=t.id) }}" style="display:inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this teacher?')"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Add Student ─────────────────────────────── -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-user-graduate"></i> Students</h3>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_student') }}" enctype="multipart/form-data" class="admin-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="name" required placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" required placeholder="student@email.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Enrollment No</label>
+                        <input type="text" name="enrollment_no" required placeholder="EN2024001">
+                    </div>
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select name="semester" class="select-input">
+                            {% for i in range(1, 9) %}
+                            <option value="{{ i }}">Semester {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-camera"></i> Face Photo</label>
+                    <input type="file" name="face_image" accept="image/*" class="file-input">
+                    <small class="form-hint">Upload a clear frontal face photo for recognition</small>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Student</button>
+            </form>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Enrollment</th>
+                            <th>Sem</th>
+                            <th>Face</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td>{{ s.name }}</td>
+                            <td><code>{{ s.enrollment_no }}</code></td>
+                            <td>{{ s.semester }}</td>
+                            <td>
+                                {% if s.face_encoding_blob %}
+                                <span class="badge badge-success"><i class="fas fa-check"></i></span>
+                                {% else %}
+                                <span class="badge badge-danger"><i class="fas fa-times"></i></span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.delete_student', student_id=s.id) }}" style="display:inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this student and all records?')"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Add Subject ─────────────────────────────── -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-book"></i> Subjects</h3>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_subject') }}" class="admin-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Subject Name</label>
+                        <input type="text" name="name" required placeholder="Data Structures">
+                    </div>
+                    <div class="form-group">
+                        <label>Code</label>
+                        <input type="text" name="code" required placeholder="CS201">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select name="semester" class="select-input">
+                            {% for i in range(1, 9) %}
+                            <option value="{{ i }}">Semester {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Teacher</label>
+                        <select name="teacher_id" class="select-input" required>
+                            <option value="">Select teacher</option>
+                            {% for t in teachers %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Subject</button>
+            </form>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Subject</th>
+                            <th>Sem</th>
+                            <th>Teacher</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in subjects %}
+                        <tr>
+                            <td><code>{{ s.code }}</code></td>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.semester }}</td>
+                            <td>{{ s.teacher.name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
