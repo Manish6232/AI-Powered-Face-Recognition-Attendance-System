@@ -3,6 +3,12 @@
 A production-ready Smart Attendance System built with **Python**, **Flask**, **OpenCV**, and **face_recognition** (ageitgey). Features real-time webcam-based attendance marking, anti-spoofing via blink detection, role-based dashboards, analytics, Excel export, and email alerts.
 
 ---
+<img width="1236" height="702" alt="Screenshot 2026-04-30 at 11 26 05 PM" src="https://github.com/user-attachments/assets/bfe72bdd-b21d-47e2-8a05-1537d28eb9f0" />
+<img width="1271" height="745" alt="Screenshot 2026-04-30 at 11 25 01 PM" src="https://github.com/user-attachments/assets/2fed5da3-c66a-49c0-a1d4-b0ffb22213c7" />
+<img width="1246" height="695" alt="Screenshot 2026-04-30 at 11 28 02 PM" src="https://github.com/user-attachments/assets/4fe07726-4484-486e-a5fa-7bdb73ed976d" />
+<img width="1268" height="742" alt="Screenshot 2026-04-30 at 11 28 43 PM" src="https://github.com/user-attachments/assets/c26ef6f8-86fb-4d37-9269-b81d16de4354" />
+<img width="1264" height="653" alt="Screenshot 2026-04-30 at 11 30 46 PM" src="https://github.com/user-attachments/assets/9f06da0a-69fc-4c80-a2f8-e983b9d70d22" />
+
 
 ## 🚀 Features
 
